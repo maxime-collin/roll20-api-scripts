@@ -1,0 +1,14 @@
+{
+    "name":"Anima Beyond Fantasy",
+    "script":"ABF-System-Roll.js",
+    "version":"0.1",
+    "previousVersions":[],
+    "description":"This script roll basically 1d100 with the Anima's System (open roll if dice > 90, then 91... And fumble if dice < 3). Many options allow nearly all possibility of Anima's System and Roll20 (complex, inhuman, zen, initiative, whispers...). Particularly adapted to ABF Sheet. Based on aRotondi openRoll Script https://gist.github.com/aRotondi1990/6795346",
+    "authors":"Maxime Collin",
+    "roll20userid":"897070",
+    "useroptions":[],
+    "dependencies":[],
+    "modifies":{
+    },
+    "conflicts":[]
+}
