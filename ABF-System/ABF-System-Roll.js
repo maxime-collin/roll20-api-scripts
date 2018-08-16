@@ -239,7 +239,7 @@ function openRoll(fumbleCeil, openFloor, val, mod, close, initiative, inhumanity
  * 
  * @returns String, the output to sendChat
  */
-function attackRes(diceResult, baseDmg, def, armor)
+function attackRes(diceResult, baseDmg, def, armor, criticalHitOptions)
 {
 	var outputAttack = " {{diff=" + def + " Armor " + armor + "}}";
 	
@@ -295,7 +295,7 @@ function attackRes(diceResult, baseDmg, def, armor)
         // the damage is the range % of baseDmg
         var dmg = baseDmg / 100 * res;
         
-        outputAttack += ' {{sucess=Damage : ' + dmg + ' (range : ' + range + ')}} {{criticalhit=[Critical Hit ?](!openroll criticalhit,100,&#63;{Locate|true|false},&#63;{Resistance|0} &#63;{Modifier|0})}}';
+        outputAttack += ' {{sucess=Damage : ' + dmg + ' (range : ' + range + ')}} {{criticalhit=[Critical Hit ?](!openroll criticalhit,100,&#63;{Locate|true|false},&#63;{Resistance|0} &#63;{Modifier|0} '+criticalHitOptions+')}}';
     }
     
     return outputAttack;
@@ -396,9 +396,9 @@ function criticalHit(resistance, dmg, mod, locate)
  * 
  * <number> -> a number like 50 or 90. Several number are add between them. For sample : !openroll 50 90 -> roll 1d100+140
  * 
- * inhumanity | inhuman -> the total isn't capped to 319.
+ * inhumanity | inhuman -> the total is capped to 439 (319 else).
  * 
- * zen -> the total isn't capped to 439.
+ * zen -> the total isn't capped.
  * 
  * initiative -> Roll a dice with the correct modifiers for initiative (ie : not open roll and [-125, -100, -75] modifiers in case of fumble [1, 2, 3]) 
  * 
@@ -474,6 +474,7 @@ on('chat:message',function(msg)
         var baseDmg = 0;
         var defVal = 0;
         var armor = 0;
+        var criticalHitOptions = "";
         
         var cmdMsg = "/direct ";
         
@@ -496,6 +497,7 @@ on('chat:message',function(msg)
             	{
             		case "gm" :
             			cmdMsg = "/w gm ";
+            			criticalHitOptions = "gm ";
             			break;
             		
 	            	case "inhumanity" :
@@ -612,6 +614,12 @@ on('chat:message',function(msg)
             }
         });
         
+        
+        if (who == "")
+        	who = 'player|'+msg.playerid;
+        else
+        	criticalHitOptions += "who:"+who;
+        
         if (testChar)
         	output += testCharacteristic(val, testCharV1, mod);
         
@@ -624,16 +632,11 @@ on('chat:message',function(msg)
     		output += diceRes["output"];
 		
 	        if (attack)
-	        	output += attackRes(diceRes, baseDmg, defVal, armor);
+	        	output += attackRes(diceRes, baseDmg, defVal, armor, criticalHitOptions);
 		}
         
-        if (who == "")
-    	{
-        	log("SpeakingAs not set");
-        	who = 'player|'+msg.playerid;
-    	}
+
    
-        log("Speaking as : " + who);
         log("output is : " + output);
         sendChat(who, cmdMsg + output);
     }
