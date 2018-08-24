@@ -1,0 +1,14 @@
+{
+    "name":"Export Attributes",
+    "script":"Export-Attrs.js",
+    "version":"0.1",
+    "previousVersions":[],
+    "description":"This script export Token, Bio & GmNote character's sheet for Anima Beyond Fantasy bestiary function",
+    "authors":"Maxime Collin",
+    "roll20userid":"897070",
+    "useroptions":[],
+    "dependencies":[],
+    "modifies":{
+    },
+    "conflicts":[]
+}
