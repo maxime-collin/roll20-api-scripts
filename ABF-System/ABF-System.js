@@ -1389,6 +1389,7 @@ on('chat:message',function(msg)
                         		case "who":                        			
                         			if (curPartVal[1] == "player")
                         				who = 'player|'+msg.playerid;
+                        			
                         			else
                         			{
                         				name = curPartVal[1];
@@ -1499,5 +1500,12 @@ on('chat:message',function(msg)
    
         log("output is : " + output);
         sendChat(who, cmdMsg + output);
+        
+        if (who.includes("player"))
+        {
+        	player = getObj('player', msg.playerid);
+        	playerName = player.get('displayname');
+        	sendChat(who, "/w " + playerName + " " + output);
+        }
     }
 });
