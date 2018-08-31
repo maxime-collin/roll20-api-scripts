@@ -1386,8 +1386,23 @@ on('chat:message',function(msg)
                         			openFloor[1].push(Number(curPartVal[1]));
                         			break;
                         			
-                        		case "who":
-                        			who = curPartVal[1];
+                        		case "who":                        			
+                        			if (curPartVal[1] == "player")
+                        				who = 'player|'+msg.playerid;
+                        			else
+                        			{
+                        				name = curPartVal[1];
+                        				var characters = findObjs({_type: 'character'});
+                        		        var character;
+                        		        characters.forEach(function(chr)
+                        				{
+                        		        	if(chr.get('name').toLowerCase() == name)
+                        		        		character = chr;
+                        		    	});
+                        		        
+                        				who = 'character|'+character.id;
+                        			}
+                        			
                         			break;
                         		
                     			case "template":
