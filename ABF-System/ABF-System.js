@@ -1140,7 +1140,7 @@ function attackRes(diceResult, baseDmg, def, armor, criticalHitOptions)
         // the damage is the range % of baseDmg
         var dmg = baseDmg / 100 * res;
         
-        outputAttack += ' {{sucess=Damage : ' + dmg + ' (range : ' + range + ')}} {{criticalhit=[Critical Hit ?](!openroll criticalhit,100,&#63;{Locate|true|false},&#63;{Resistance|0} &#63;{Modifier|0} '+criticalHitOptions+')}}';
+        outputAttack += ' {{sucess=Damage : ' + dmg + ' (range : ' + range + ')}} {{criticalhit=[Critical Hit ?](!openroll criticalhit,'+dmg+',&#63;{Locate|true|false},&#63;{Resistance|0} &#63;{Modifier|0} '+criticalHitOptions+')}}';
     }
     
     return outputAttack;
@@ -1388,8 +1388,10 @@ on('chat:message',function(msg)
                         			
                         		case "who":                        			
                         			if (curPartVal[1] == "player")
+                    				{
                         				who = 'player|'+msg.playerid;
-                        			
+                        				criticalHitOptions += "who:player";
+                    				}
                         			else
                         			{
                         				name = curPartVal[1];
@@ -1402,6 +1404,7 @@ on('chat:message',function(msg)
                         		    	});
                         		        
                         				who = 'character|'+character.id;
+                        				criticalHitOptions += "who:"+character.id;
                         			}
                         			
                         			break;
@@ -1475,12 +1478,12 @@ on('chat:message',function(msg)
             }
         });
         
-        
+        /*
         if (who == "")
         	who = 'player|'+msg.playerid;
         else
-        	criticalHitOptions += "who:"+who;
-        
+        	criticalHitOptions += "who:"+who.split('|')[0];
+        */
         if (testChar)
         	output += testCharacteristic(val, testCharV1, mod);
         
