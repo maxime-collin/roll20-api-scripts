@@ -867,13 +867,13 @@ function evaluateExpr(exprStr)
 
 /** Roll 1d10 with the Anima Characteristic's system (V1 or V2).
  * 
- * @param charVal 		: Number, the value of Characteristic
- * @param testCharV1	: Boolean, true if you want use the V1 of system (a dice below characteristic) or false for the V2 (a dice + characteristic)
- * @param mod 			: Number, a modifier to characteristic
+ * @param charVal 			: Number, the value of Characteristic
+ * @param testCharOpposed	: Boolean, true if you want use the V1 of system (a dice below characteristic) or false for the V2 (a dice + characteristic)
+ * @param mod 				: Number, a modifier to characteristic
  * 
  * @returns String, the output to sendChat
  */
-function testCharacteristic(charVal, testCharV1, mod)
+function testCharacteristic(charVal, testCharOpposed, mod)
 {
 	var outputChar = "";
 	log ("characteristic test : " + charVal);
@@ -882,9 +882,9 @@ function testCharacteristic(charVal, testCharV1, mod)
 	
 	total = charVal + mod;
 	
-	if (testCharV1) // V1 system : a dice below characteristic
+	if (!testCharOpposed) // a dice below characteristic
 	{
-		log("V1");
+		log("below");
 		outputChar += ' {{roll=<span style="font-family: \'dicefontd10\'">T</span><span style="font-weight:bold; font-size:1.2em;">'+dice+'</span>}} {{diff=<span style="font-weight:bold; font-size:1.2em;">' +total+ '</span><span style="font-size:0.8em;"> (<span style="font-family: \'Pictos\'">U</span>' +charVal+ ' + <span style="font-family: \'Pictos\'">+</span>' +mod+ ')</span>}}';
 		
 		total -= dice; // total - dice give the result range
@@ -909,9 +909,9 @@ function testCharacteristic(charVal, testCharV1, mod)
 			outputChar += " {{sucess="+total+"}}";
 		
 	}
-	else // V2 system : a dice + characteristic
+	else // a dice + characteristic
 	{
-		log("V2");
+		log("opposed");
 		
 		total += dice; // add dice to characteristic
 		
@@ -1312,8 +1312,7 @@ on('chat:message',function(msg)
         var val = 0;
         
         var testChar = false;
-        var testCharV1 = false;
-        var testCharV2 = false;
+        var testCharOpposed = false;
         
         var attack = false;
         var baseDmg = 0;
@@ -1340,12 +1339,12 @@ on('chat:message',function(msg)
             else {
             	switch (curPart)
             	{
-            		case "gm" :
-            			cmdMsg = "/w gm ";
-            			criticalHitOptions = "gm ";
+            		case "gm" : // whisper to GM
+            			cmdMsg = "/w gm "; // set cmdMsg
+            			criticalHitOptions += " gm"; // and option for critical hit (in case it's an attack)
             			break;
             		
-	            	case "inhumanity" :
+	            	case "inhumanity" : // 2 writing
 	            	case "inhuman" :
 	            		inhumanity = true;
 	            		break;
@@ -1364,60 +1363,55 @@ on('chat:message',function(msg)
 	            		break;
 	            		
 	            	case "complex" :
-	            		if(!initiative)
-	                		// complex doesn't apply to initiative rolls.
+	            		if(!initiative) // complex doesn't apply to initiative rolls.
 	                    	fumbleCeil+=2;
 	            		break;
 	            		
 	            	case "mastery" :
-	            		if(!initiative)
-	                		//mastery doesn't apply to initiative rolls.
+	            		if(!initiative) //mastery doesn't apply to initiative rolls.
 	                    	fumbleCeil--;
 	            		break;
 	            		
-            		default :
+            		default : // not a number and not a simple String defined above -> String with parameters ? ie with ':' or ',' separator  
             			if (curPart.includes(":"))
                     	{
                         	curPartVal = curPart.split(":");
                         	
                         	switch(curPartVal[0])
                         	{                        			
-                        		case "cs":
-                        			openFloor[1].push(Number(curPartVal[1]));
+                        		case "cs": // Critical Success  : cs:42 for example
+                        			openFloor[1].push(Number(curPartVal[1])); // push number in parameter in openFloor's values 
                         			break;
                         			
-                        		case "who":                        			
+                        		case "who": // the display name : can be 'who:player' if it's a PC or 'who:<characterName>' if it's a NPC
                         			if (curPartVal[1] == "player")
-                    				{
-                        				who = 'player|'+msg.playerid;
-                        				criticalHitOptions += "who:player";
-                    				}
-                        			else
+                        				who = 'player|'+msg.playerid; // get the player id for sendChat cmd
+                        			else // who:<characterName>
                         			{
-                        				name = curPartVal[1];
-                        				var characters = findObjs({_type: 'character'});
+                        				name = curPartVal[1]; // get the character name
+                        				var characters = findObjs({_type: 'character'}); // get the list of characters
                         		        var character;
-                        		        characters.forEach(function(chr)
+                        		        characters.forEach(function(chr) // search the object corresponding to character name
                         				{
-                        		        	if(chr.get('name').toLowerCase() == name)
+                        		        	if(chr.get('name').toLowerCase() == name) // toLowerCase because strings pass to command (!) are lowered case
                         		        		character = chr;
                         		    	});
                         		        
-                        				who = 'character|'+character.id;
-                        				criticalHitOptions += "who:"+character.id;
+                        				who = 'character|'+character.id; // get the character id for sendChat cmd
                         			}
                         			
+                        			criticalHitOptions += " " + curPart; // pass the original string (who:player or who:<characterName>) to criticalHit Options 
                         			break;
                         		
-                    			case "template":
-                    				output = "&{template:ABF" + curPartVal[1] + "}";
+                    			case "template": // the Template name : can be 'template:ini' or 'template:default' or 'template:attack' ...
+                    				output = "&{template:ABF" + curPartVal[1] + "}"; // prefix the template name by 'ABF' for match with templates defined in sheet
                     				break;
                     				
-                        		case "expr":
+                        		case "expr": // an mathematical expression to add to modifiers
                         			mod += evaluateExpr(curPartVal[1]);
                         			break;
                         			
-                        		case 'val':
+                        		case 'val': // the value of ability tested. Can be a number or an expression
                         			if (curPartVal[1] == "expr")
                             		{
                                 		log ("expr");
@@ -1431,24 +1425,18 @@ on('chat:message',function(msg)
                         			
                         			break;
                         			
-                        		case "characteristics":
+                        		case "characteristics": // a characteristic test : characteristics:v1 or v2 if it's a test below the characteristic (v1) or a opposed test (v2)
+                        			log ("test char");
+                        			
                         			testChar = true;
-                                	log ("test char");
+                                	if (curPartVal[1] == "v2") // if it's 'v2' -> set testCharOpposed to true
+                                		testCharOpposed = true;
                                 	
-                                	if (curPartVal[1] == "v1")
-                            		{
-                                		log ("v1");
-                                		testCharV1 = true;
-                            		}
-                            		else
-                        			{
-                            			log ("v2");
-                            			testCharV2 = true;
-                        			}
+                                	// else (=='v1') do nothing : testCharOpposed if false by default, ie it's a test below the characteristic
                                 	
                                 	break;
                                 	
-                        		case "attack":
+                        		case "attack": // an attack : attack:baseDmg:defVal:armor (only number)
                         			attack = true;
         	                    	
                                 	baseDmg = evaluateExpr(curPartVal[1]);
@@ -1457,19 +1445,19 @@ on('chat:message',function(msg)
                                 	
                                 	break;
                         	}
-                    	} else if (curPart.includes(","))
+                    	} else if (curPart.includes(",")) // test other separator ','
                     	{
                         	curPartVal = curPart.split(",");
                         	
                         	switch(curPartVal[0])
                         	{
-                        		case "criticalhit":
+                        		case "criticalhit": // a critical hit test : criticalhit:dmg:locate:resistance
                         			criticalhit = true;
-                        			output = "&{template:ABFcriticalhit}";
+                        			output = "&{template:ABFcriticalhit}"; // set the template
                         			
-                                	dmg = Number(curPartVal[1]);
-                                	locate = (curPartVal[2] == 'true');;
-                                	resistance = Number(curPartVal[3]);
+                                	dmg = Number(curPartVal[1]); // the damages inflicted
+                                	locate = (curPartVal[2] == 'true'); // test if locate String is true or false -> return boolean  
+                                	resistance = Number(curPartVal[3]); // the resistance test value
                                 	
                         			break;
                         	}
@@ -1478,18 +1466,16 @@ on('chat:message',function(msg)
             }
         });
         
-        /*
-        if (who == "")
-        	who = 'player|'+msg.playerid;
-        else
-        	criticalHitOptions += "who:"+who.split('|')[0];
-        */
-        if (testChar)
-        	output += testCharacteristic(val, testCharV1, mod);
+
+        // test if it's a special test :
         
-        else if (criticalhit)
+        if (testChar) // test if it's a characteristic test -> pass the value of characteristic, if it's a test under the value or opposed and modifiers' value
+        	output += testCharacteristic(val, testCharOpposed, mod);
+        
+        else if (criticalhit) // test if it's a critical hit test
         	output += criticalHit(resistance, dmg, mod, locate);
-        	
+    	
+        // for the other test, openRoll function is used 
     	else
 		{
     		diceRes = openRoll(fumbleCeil, openFloor, val, mod, close, initiative, inhumanity, zen);
@@ -1504,11 +1490,13 @@ on('chat:message',function(msg)
         log("output is : " + output);
         sendChat(who, cmdMsg + output);
         
+        // if it's a PC -> send chat to him : whisper to GM with sendChat function doesn't send chat to player
+        // -> we must call the function a second time, with the display name of player
         if (who.includes("player"))
         {
-        	player = getObj('player', msg.playerid);
-        	playerName = player.get('displayname');
-        	sendChat(who, "/w " + playerName + " " + output);
+        	player = getObj('player', msg.playerid); // get the obj corresponding to playerid
+        	playerName = player.get('displayname'); // get his display name
+        	sendChat(who, "/w " + playerName + " " + output); // send chat to player
         }
     }
 });
