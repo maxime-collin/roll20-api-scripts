@@ -9,9 +9,7 @@ var chatSetAttr = chatSetAttr || (function () {
 	const version = "1.8",
 		schemaVersion = 3,
 		replacers = [
-			[/</g, "["],
 			[/\\lbrak/g, "["],
-			[/>/g, "]"],
 			[/\\rbrak/g, "]"],
 			[/;/g, "?"],
 			[/\\ques/g, "?"],
@@ -813,7 +811,15 @@ on('chat:message',function(msg)
 		
 		character.get('bio', function(bio)
 		{
-			output += ", bio: '" + bio.replace(/'/g, "\\'").replace(/(<[^<>]*>)/g, " ") + "'";
+			output += ", bio: '"
+						+ bio
+							.replace(/'/g, "\\'")
+							.replace(/(<[^<>]*>)/g, " ")
+							.replace(/&nbsp[?;]/g, "")
+							.replace(/&gt[?;]/g, ">")
+							.replace(/&lt[?;]/g, "<")
+							.replace(/&amp[?;]/g, "&")
+						 + "'";
 			
 			character.get('gmnotes', function(gmNotes)
 			{
